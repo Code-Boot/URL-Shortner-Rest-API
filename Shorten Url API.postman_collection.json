@@ -1,0 +1,36 @@
+{
+	"info": {
+		"_postman_id": "b16dc07a-09bf-4a8b-bd3f-68926ff571cf",
+		"name": "Shorten Url API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create Short Url",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"url\": \"https://stackoverflow.com/questions/52922292/org-hibernate-tool-schema-spi-commandacceptanceexception-error-executing-ddl-vi\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "http://localhost:9090/api/"
+			},
+			"response": []
+		},
+		{
+			"name": "Get Full Url",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "http://localhost:9090/api/74PiUl"
+			},
+			"response": []
+		}
+	]
+}
