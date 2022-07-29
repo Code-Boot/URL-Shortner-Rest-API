@@ -12,8 +12,4 @@ public class UrlShortnerRestApiApplication {
 		SpringApplication.run(UrlShortnerRestApiApplication.class, args);
 	}
 
-	@Bean
-	public ModelMapper modelMapper() {
-		return new ModelMapper();
-	}
 }

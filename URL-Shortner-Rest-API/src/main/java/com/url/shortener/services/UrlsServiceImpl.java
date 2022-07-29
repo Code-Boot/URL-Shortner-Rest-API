@@ -1,22 +1,19 @@
 package com.url.shortener.services;
 
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
+import com.google.common.base.Preconditions;
 import com.url.shortener.entities.Urls;
 import com.url.shortener.exceptions.URLNotFoundException;
 import com.url.shortener.payloads.UrlsDto;
 import com.url.shortener.repositories.UrlsRepo;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
 public class UrlsServiceImpl implements UrlsService {
-
-	@Autowired
-	ModelMapper mapper;
 
 	@Autowired
 	UrlsRepo urlsRepo;
@@ -30,42 +27,69 @@ public class UrlsServiceImpl implements UrlsService {
 	@Value("${alphanumeric.string}")
 	String AlphaNumericString;
 
+	private static final UrlsDto uDto = new UrlsDto();
+	private static Urls url;
+	private static String uniqueKey;
+
+
+	/**
+	 * This method creates shorten Url for the url that is passed
+	 * @param urlsDto - It has Url that needs to be shortened
+	 * @return UrlsDto
+	 */
 	@Override
 	public UrlsDto createShortUrl(UrlsDto urlsDto) {
-		log.info("START: Creating Shorten Url for : {}", urlsDto.getUrl());
-		Urls url = urlsRepo.findByUrl(urlsDto.getUrl());
-		// TODO : Add log to print url value : To be handled in enhancement pr
-		if (url == null) {
-			String uniqueKey = getAlphaNumericString();
-			url = mapper.map(urlsDto, Urls.class);
-			url.setUniqueKey(uniqueKey);
-			url = urlsRepo.save(url);
+		try {
+			log.info("Validating url: {}", urlsDto.getUrl());
+			log.info("START: Creating Shorten Url for : {}", urlsDto.getUrl());
+			// Find url if present
+			url = urlsRepo.findByUrl(urlsDto.getUrl());
+
+			if (url == null) {
+				log.info("Generating a unique key for url passed");
+				uniqueKey = getAlphaNumericString();
+				//Initialise url
+				url = new Urls();
+
+				BeanUtils.copyProperties(urlsDto, url);
+				url.setUniqueKey(uniqueKey);
+				urlsRepo.save(url);
+			}
+
+			BeanUtils.copyProperties(url, uDto);
+			uDto.setShortenUrl(apiUrl + url.getUniqueKey());
+			log.info("End: Created Shorten Url: {} for : {}", uDto.getShortenUrl(), uDto.getUrl());
+
+			return uDto;
+		} catch (Exception e) {
+			log.error("Exception occurred while creating shorten url: {}", e.getMessage());
+			throw new URLNotFoundException(e.getMessage());
 		}
-		UrlsDto uDto = mapper.map(url, UrlsDto.class);
-		uDto.setShortenUrl(apiUrl + url.getUniqueKey());
-		log.info("End: Creating Shorten Url: {} for : {}", uDto.getShortenUrl(), uDto.getUrl());
-		return uDto;
+
 	}
 
 	@Override
 	public UrlsDto getFullUrl(String uniqueKey) {
-		log.info("Getting Url for uniqueKey: {}", uniqueKey);
-		Urls savedUrl = urlsRepo.findByUniqueKey(uniqueKey);
-		if (savedUrl == null) {
-			log.error("No url found against uniqueKey: {}", uniqueKey);
-			throw new URLNotFoundException(apiUrl + uniqueKey + " does not exists.");
+		try {
+			log.info("Getting Url for uniqueKey: {}", uniqueKey);
+			Urls savedUrl = urlsRepo.findByUniqueKey(uniqueKey);
+			Preconditions.checkNotNull(savedUrl, "No url found against uniqueKey ->", uniqueKey);
+
+			BeanUtils.copyProperties(savedUrl, uDto);
+			uDto.setShortenUrl(apiUrl + savedUrl.getUniqueKey());
+			log.info("Url for UniqueKey: {} is : {}", uniqueKey, uDto.getUrl());
+
+			return uDto;
+		} catch (Exception e) {
+			log.error("Exception occurred while getting the url: {}", e.getMessage());
+			throw new URLNotFoundException(e.getMessage());
 		}
 
-		UrlsDto uDto = mapper.map(savedUrl, UrlsDto.class);
-		uDto.setShortenUrl(apiUrl + savedUrl.getUniqueKey());
-		log.info("Url for UniqueKey: {} is : {}", uniqueKey, uDto.getUrl());
-		return uDto;
 	}
 
 	private String getAlphaNumericString() {
 		log.info("START: Creating UniqueKey");
 		StringBuilder sb = new StringBuilder(uniqueKeyLen);
-		// TODO: Add try catch if any error is encountered during key creation
 		do {
 			for (int i = 0; i < uniqueKeyLen; i++) {
 				int index = (int) (AlphaNumericString.length() * Math.random());
