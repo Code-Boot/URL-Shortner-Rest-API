@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>com.url.shortener</groupId>
 	<artifactId>URL-Shortner-Rest-API</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0.0</version>
 	<name>URL-Shortner-Rest-API</name>
 	<description>URL Shortener Rest API project using Spring Boot</description>
 	<properties>
